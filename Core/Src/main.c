@@ -95,7 +95,8 @@ PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
 SDRAM_HandleTypeDef hsdram1;
 
-osThreadId defaultTaskHandle;uint8_t cec_receive_buffer[16];
+osThreadId defaultTaskHandle;
+osThreadId ConsoleTaskHandle;uint8_t cec_receive_buffer[16];
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -131,6 +132,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART6_UART_Init(void);
 static void MX_USB_OTG_HS_PCD_Init(void);
 void StartDefaultTask(void const * argument);
+void StartConsoleTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -213,6 +215,10 @@ int main(void)
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 4096);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of ConsoleTask */
+  osThreadDef(ConsoleTask, StartConsoleTask, osPriorityNormal, 0, 512);
+  ConsoleTaskHandle = osThreadCreate(osThread(ConsoleTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1765,6 +1771,24 @@ __weak void StartDefaultTask(void const * argument)
 	  osDelay(100);
   }
   /* USER CODE END 5 */ 
+}
+
+/* USER CODE BEGIN Header_StartConsoleTask */
+/**
+* @brief Function implementing the ConsoleTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartConsoleTask */
+__weak void StartConsoleTask(void const * argument)
+{
+  /* USER CODE BEGIN StartConsoleTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartConsoleTask */
 }
 
  /**

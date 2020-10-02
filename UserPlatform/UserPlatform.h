@@ -21,5 +21,6 @@
 
 extern UART_HandleTypeDef USER_CONSOLE_UART_HANDLE;
 extern DMA_HandleTypeDef USER_CONSOLE_UART_DMA_RX_HANDLE;
+//static UART_HandleTypeDef *huart = &USER_CONSOLE_UART_HANDLE;
 
 #endif /* USERPLATFORM_H_ */

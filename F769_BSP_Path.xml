@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cdtprojectproperties>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.IncludePaths">
+<language name="s,S">
+
+</language>
+<language name="C Source File">
+<includepath>Drivers/BSP/Components/Common</includepath>
+<includepath>Drivers/BSP/Components/ft6x06</includepath>
+<includepath>Drivers/BSP/Components/otm8009a</includepath>
+<includepath>Drivers/BSP/Components/wm8994</includepath>
+<includepath>Drivers/BSP/STM32F769I-Discovery</includepath>
+<includepath>Drivers/BSP/Components/adv7533</includepath>
+<includepath>Drivers/BSP/Components/mx25l512</includepath>
+</language>
+<language name="Object File">
+
+</language>
+</section>
+</cdtprojectproperties>

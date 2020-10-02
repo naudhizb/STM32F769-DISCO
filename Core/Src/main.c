@@ -31,6 +31,7 @@
 #include "stm32f769i_discovery_ts.h"
 #include "stm32f769i_discovery_sd.h"
 
+#include "UserPlatform.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -1740,7 +1741,7 @@ __weak void StartDefaultTask(void const * argument)
   {
 
 	  char buf[80] = {0,};
-	  sprintf(buf, "tick: %14lu",HAL_GetTick());
+	  sprintf(buf, "time: %14.3f",HAL_GetTick()/1000.0f);
 	  BSP_LCD_DisplayStringAtLine(2, (uint8_t *)buf);
 
 	  {		// LCD Touch BSP

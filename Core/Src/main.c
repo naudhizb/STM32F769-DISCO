@@ -24,6 +24,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32f7xx_hal.h"
+#include "stm32f769i_discovery.h"
+#include "stm32f769i_discovery_lcd.h"
+#include "stm32f769i_discovery_qspi.h"
+#include "stm32f769i_discovery_ts.h"
+#include "stm32f769i_discovery_sd.h"
 
 /* USER CODE END Includes */
 
@@ -68,7 +74,7 @@ SAI_HandleTypeDef hsai_BlockA1;
 SAI_HandleTypeDef hsai_BlockB1;
 SAI_HandleTypeDef hsai_BlockA2;
 
-MMC_HandleTypeDef hmmc2;
+SD_HandleTypeDef hsd2;
 
 SPDIFRX_HandleTypeDef hspdif;
 
@@ -111,7 +117,7 @@ static void MX_QUADSPI_Init(void);
 static void MX_RTC_Init(void);
 static void MX_SAI1_Init(void);
 static void MX_SAI2_Init(void);
-static void MX_SDMMC2_MMC_Init(void);
+static void MX_SDMMC2_SD_Init(void);
 static void MX_SPDIFRX_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM1_Init(void);
@@ -1055,7 +1061,7 @@ static void MX_SAI2_Init(void)
   * @param None
   * @retval None
   */
-static void MX_SDMMC2_MMC_Init(void)
+static void MX_SDMMC2_SD_Init(void)
 {
 
   /* USER CODE BEGIN SDMMC2_Init 0 */
@@ -1065,18 +1071,18 @@ static void MX_SDMMC2_MMC_Init(void)
   /* USER CODE BEGIN SDMMC2_Init 1 */
 
   /* USER CODE END SDMMC2_Init 1 */
-  hmmc2.Instance = SDMMC2;
-  hmmc2.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-  hmmc2.Init.ClockBypass = SDMMC_CLOCK_BYPASS_DISABLE;
-  hmmc2.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-  hmmc2.Init.BusWide = SDMMC_BUS_WIDE_1B;
-  hmmc2.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hmmc2.Init.ClockDiv = 0;
-  if (HAL_MMC_Init(&hmmc2) != HAL_OK)
+  hsd2.Instance = SDMMC2;
+  hsd2.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
+  hsd2.Init.ClockBypass = SDMMC_CLOCK_BYPASS_DISABLE;
+  hsd2.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
+  hsd2.Init.BusWide = SDMMC_BUS_WIDE_1B;
+  hsd2.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
+  hsd2.Init.ClockDiv = 0;
+  if (HAL_SD_Init(&hsd2) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_MMC_ConfigWideBusOperation(&hmmc2, SDMMC_BUS_WIDE_4B) != HAL_OK)
+  if (HAL_SD_ConfigWideBusOperation(&hsd2, SDMMC_BUS_WIDE_4B) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1704,11 +1710,58 @@ static void MX_GPIO_Init(void)
 __weak void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN 5 */
+	BSP_LED_Init(LED_GREEN);
+	BSP_LED_Init(LED_RED);
+	BSP_LED_On(LED_RED);
+	BSP_PB_Init(BUTTON_WAKEUP, BUTTON_MODE_GPIO);
+
+	uint8_t  lcd_status = LCD_OK;
+	lcd_status = BSP_LCD_Init();
+	while(lcd_status != LCD_OK);
+
+	BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER_BACKGROUND, LCD_FB_START_ADDRESS);
+	BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER_BACKGROUND);
+	BSP_LCD_Clear(LCD_COLOR_WHITE);
+
+
+	uint32_t ts_status = TS_OK;
+	TS_StateTypeDef  TS_State = {0};
+	BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+	ts_status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+
+
+//	BSP_LCD_DisplayStringAt(0, LINE(7), "Hello", LEFT_MODE);
+	BSP_LCD_DisplayStringAtLine(1, (uint8_t *)"STM32F769-DISCO BSP Testing");
+
+
+
   /* Infinite loop */
   for(;;)
   {
+
+	  char buf[80] = {0,};
+	  sprintf(buf, "tick: %14lu",HAL_GetTick());
+	  BSP_LCD_DisplayStringAtLine(2, (uint8_t *)buf);
+
+	  {		// LCD Touch BSP
+		  ts_status = BSP_TS_GetState(&TS_State);
+		  uint16_t x1 = 0, y1 = 0;
+		  uint16_t x2 = 0, y2 = 0;
+		  if(TS_State.touchDetected > 0){
+			  x1 = TS_State.touchX[0];
+			  y1 = TS_State.touchY[0];
+		  }
+		  if(TS_State.touchDetected == 2){
+			  x2 = TS_State.touchX[1];
+			  y2 = TS_State.touchY[1];
+		  }
+		  sprintf(buf, "x : %5u  y : %5u", x1, y1);
+		  BSP_LCD_DisplayStringAtLine(3, (uint8_t *)buf);
+		  sprintf(buf, "x : %5u  y : %5u", x2, y2);
+		  BSP_LCD_DisplayStringAtLine(4, (uint8_t *)buf);
+	  }
 	  HAL_GPIO_TogglePin(LD_USER2_GPIO_Port, LD_USER2_Pin);
-    osDelay(100);
+	  osDelay(100);
   }
   /* USER CODE END 5 */ 
 }

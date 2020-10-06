@@ -54,6 +54,12 @@
 /* USER CODE BEGIN 0 */
   extern void configureTimerForRunTimeStats(void);
   extern unsigned long getRunTimeCounterValue(void);
+
+/* From cpu_utils.h */
+#define traceTASK_SWITCHED_IN()  extern void StartIdleMonitor(void); \
+                                     StartIdleMonitor()
+#define traceTASK_SWITCHED_OUT() extern void EndIdleMonitor(void); \
+                                     EndIdleMonitor()
 /* USER CODE END 0 */
 #endif
 #define configENABLE_FPU                         1

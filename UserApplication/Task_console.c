@@ -53,7 +53,8 @@ void StartConsoleTask(void const * argument)
 		HAL_StatusTypeDef status = HAL_OK;
 		status = HAL_UART_Receive(huart, (uint8_t *)&cInChar, 1, 0);
 		if(status != HAL_OK){
-			osThreadYield();
+			osDelay(1);
+			//osThreadYield();
 			continue;
 		}
 

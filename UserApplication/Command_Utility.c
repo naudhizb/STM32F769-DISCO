@@ -1,8 +1,8 @@
 /*
- * Command_registercmd.c
+ * Command_Utility.c
  *
- *  Created on: 2019. 6. 14.
- *      Author: mjlee2
+ *  Created on: 2020. 10. 6.
+ *      Author: naudh
  */
 
 #include "main.h"
@@ -13,7 +13,9 @@
 
 #include "CLI_defs.h"
 
-CLI_FUNCTION_DEF(hello)
+#include "cpu_utils.h"
+
+CLI_FUNCTION_DEF(CPU_Usage)
 {
 	const char *pcParameterString;
 //	uint8_t *pcEndString;
@@ -37,17 +39,15 @@ CLI_FUNCTION_DEF(hello)
 			break;
 		}
 	}
-	strcpy(pcWriteBuffer,"Hello world!\r\n");
+
+	sprintf(pcWriteBuffer,"CPU Usage:%u\r\n", osGetCPUUsage());
 
 	return pdFALSE;
 }
 
 
-void vRegisterCLICommands(){
-	CLI_COMMAND_DEF(hello, Print Hello world string, 0);
-	CLI_REGISTER_FUNCTION(hello);
-
-	extern void vRegisterUtilityCommands();
-	vRegisterUtilityCommands();
+void vRegisterUtilityCommands(){
+	CLI_COMMAND_DEF(CPU_Usage, Print Current CPU Usage, 0);
+	CLI_REGISTER_FUNCTION(CPU_Usage);
 }
 

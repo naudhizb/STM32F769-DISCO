@@ -12,6 +12,7 @@
 #include "stm32f7xx_hal.h"
 
 #include "printf.h"
+#include "cmsis_os.h"
 #include "cmsis_os_ext.h"
 
 

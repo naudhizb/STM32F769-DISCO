@@ -38,6 +38,7 @@ extern void vRegisterCLICommands();
 
 void StartConsoleTask(void const * argument)
 {
+	while(1)
 	osDelay(500);
 	int8_t cInChar, cInputIndex = 0;
 	BaseType_t xMoreDataToFollow;

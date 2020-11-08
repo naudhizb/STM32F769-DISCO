@@ -83,6 +83,7 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim10;
 TIM_HandleTypeDef htim11;
 TIM_HandleTypeDef htim12;
@@ -90,13 +91,16 @@ TIM_HandleTypeDef htim12;
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart6;
+DMA_HandleTypeDef hdma_usart1_rx;
 
 PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
 SDRAM_HandleTypeDef hsdram1;
 
 osThreadId defaultTaskHandle;
-osThreadId ConsoleTaskHandle;uint8_t cec_receive_buffer[16];
+osThreadId ConsoleTaskHandle;
+osThreadId ConsoleRxTaskHandle;
+osMessageQId console_Rx_queueHandle;uint8_t cec_receive_buffer[16];
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -104,6 +108,7 @@ osThreadId ConsoleTaskHandle;uint8_t cec_receive_buffer[16];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_CRC_Init(void);
@@ -131,8 +136,10 @@ static void MX_UART5_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART6_UART_Init(void);
 static void MX_USB_OTG_HS_PCD_Init(void);
+static void MX_TIM5_Init(void);
 void StartDefaultTask(void const * argument);
 void StartConsoleTask(void const * argument);
+void StartConsoleRxTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -153,6 +160,12 @@ int main(void)
 
   /* USER CODE END 1 */
 
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
+
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -171,6 +184,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CRC_Init();
   MX_DMA2D_Init();
   MX_DSIHOST_DSI_Init();
@@ -191,6 +205,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
   MX_USB_OTG_HS_PCD_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -207,6 +222,11 @@ int main(void)
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* definition and creation of console_Rx_queue */
+  osMessageQDef(console_Rx_queue, 256, uint8_t);
+  console_Rx_queueHandle = osMessageCreate(osMessageQ(console_Rx_queue), NULL);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -219,6 +239,10 @@ int main(void)
   /* definition and creation of ConsoleTask */
   osThreadDef(ConsoleTask, StartConsoleTask, osPriorityNormal, 0, 512);
   ConsoleTaskHandle = osThreadCreate(osThread(ConsoleTask), NULL);
+
+  /* definition and creation of ConsoleRxTask */
+  osThreadDef(ConsoleRxTask, StartConsoleRxTask, osPriorityAboveNormal, 0, 256);
+  ConsoleRxTaskHandle = osThreadCreate(osThread(ConsoleRxTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -1272,6 +1296,51 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief TIM5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM5_Init(void)
+{
+
+  /* USER CODE BEGIN TIM5_Init 0 */
+
+  /* USER CODE END TIM5_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM5_Init 1 */
+
+  /* USER CODE END TIM5_Init 1 */
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 216-1;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 4294967295;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM5_Init 2 */
+
+  /* USER CODE END TIM5_Init 2 */
+
+}
+
+/**
   * @brief TIM10 Initialization Function
   * @param None
   * @retval None
@@ -1546,6 +1615,22 @@ static void MX_USB_OTG_HS_PCD_Init(void)
 
 }
 
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+
+}
+
 /* FMC initialization function */
 static void MX_FMC_Init(void)
 {
@@ -1732,6 +1817,7 @@ __weak void StartDefaultTask(void const * argument)
 
 
 	uint32_t ts_status = TS_OK;
+	(void) ts_status;
 	TS_StateTypeDef  TS_State = {0};
 	BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
 	ts_status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
@@ -1789,6 +1875,24 @@ __weak void StartConsoleTask(void const * argument)
     osDelay(1);
   }
   /* USER CODE END StartConsoleTask */
+}
+
+/* USER CODE BEGIN Header_StartConsoleRxTask */
+/**
+* @brief Function implementing the ConsoleRxTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartConsoleRxTask */
+__weak void StartConsoleRxTask(void const * argument)
+{
+  /* USER CODE BEGIN StartConsoleRxTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartConsoleRxTask */
 }
 
  /**

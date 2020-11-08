@@ -53,6 +53,7 @@ void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void TIM8_TRG_COM_TIM14_IRQHandler(void);
+void DMA2_Stream2_IRQHandler(void);
 void OTG_HS_IRQHandler(void);
 void LTDC_IRQHandler(void);
 void DMA2D_IRQHandler(void);

@@ -23,6 +23,8 @@ CLI_FUNCTION_DEF(CPU_Usage)
 	uint32_t num_of_param = 0;
 	portBASE_TYPE xParameterStringLength;
 
+	(void) pcParameterString;
+
 	for(int i = 1; i <= num_of_param; i++ ){
 		/* Obtain the parameter string. */
 		pcParameterString = FreeRTOS_CLIGetParameter

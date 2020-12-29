@@ -37,23 +37,15 @@ void StartConsoleRxTask(void const * argument)
 	for(;;)
 	{
 		uint32_t PreviousWakeTime = osKernelSysTick();
-		curr_len = dma_size - hdma->Instance->NDTR;
-		if((curr_len != 0)&&(prev_len == curr_len)){
-			printf("%3lu/%3lu\n",curr_len, prev_len);
-			for(int i = 0; i < dma_size; i++){
-				printf("%02x ", rxbuf[i]);
-				if(!((i+1)%16))
-					printf("\n");
+		curr_len = dma_size - hdma->Instance->NDTR; // [0 255]
+
+//		printf("%3lu/%3lu\n",curr_len, prev_len);
+		while(curr_len != prev_len){
+			osMessagePut(console_Rx_queueHandle, rxbuf[prev_len], 1000);
+			prev_len++;
+			if(prev_len == dma_size){
+				prev_len = 0;
 			}
-			__HAL_DMA_DISABLE(hdma); // Call Interrupt
-			for(int i =0; i < curr_len ; i++){
-				osMessagePut(console_Rx_queueHandle, rxbuf[i], 1000);
-			}
-			do{
-				status = HAL_UART_Receive_DMA(huart, rxbuf, dma_size);
-			} while(status != HAL_OK);
-		} else {
-			prev_len = curr_len;
 		}
 		osDelayUntil(&PreviousWakeTime, 100);
 

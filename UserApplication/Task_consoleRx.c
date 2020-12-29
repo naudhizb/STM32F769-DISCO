@@ -21,7 +21,7 @@ static DMA_HandleTypeDef *hdma = &USER_CONSOLE_UART_DMA_RX_HANDLE;
 extern osMessageQId console_Rx_queueHandle;
 static uint8_t rxbuf[256];
 
-void _StartConsoleRxTask(void const * argument)
+void StartConsoleRxTask(void const * argument)
 {
 	/* USER CODE BEGIN StartConsoleRxTask */
 	const int dma_size = 256;

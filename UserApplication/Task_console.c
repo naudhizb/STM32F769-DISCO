@@ -25,13 +25,13 @@
 #define CONSOLE_PRINT_CHAR(ch)	printf("%c",ch) //HAL_UART_Transmit(huart, (uint8_t *)&ch, 1, 1000)
 
 /* Extern Variable */
+extern osMessageQId console_Rx_queueHandle;
 
 /* Internal Variable */
 static char cmd_guide[] = "STM32:/$ ";
 static char crln[] = "\r\n";
 static char cInputString[ cmdMAX_INPUT_SIZE ], cOutputString[ cmdMAX_OUTPUT_SIZE ];
 static UART_HandleTypeDef *huart = &USER_CONSOLE_UART_HANDLE;
-
 /* Function */
 extern void vRegisterCLICommands();
 
@@ -48,7 +48,8 @@ void StartConsoleTask(void const * argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		/* Blocking Read */
+#if 0 // Polling Method
+		/* Non-Blocking Read */
 		HAL_StatusTypeDef status = HAL_OK;
 		status = HAL_UART_Receive(huart, (uint8_t *)&cInChar, 1, 0);
 		if(status != HAL_OK){
@@ -56,7 +57,15 @@ void StartConsoleTask(void const * argument)
 			//osThreadYield();
 			continue;
 		}
-
+#else // Queue Used
+		/* Blocking Read */
+		osEvent evt = osMessageGet(console_Rx_queueHandle, CONSOLE_TIMEOUT);
+		if(evt.status == osEventMessage){
+			cInChar = evt.value.v;
+		} else {
+			continue;
+		}
+#endif
 
 		/* Iterator */
 		{

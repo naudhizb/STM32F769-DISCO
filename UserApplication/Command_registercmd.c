@@ -51,5 +51,8 @@ void vRegisterCLICommands(){
 
 	extern void vRegisterUtilityCommands();
 	vRegisterUtilityCommands();
+
+	extern void vRegisterCLICommands_Debug();
+	vRegisterCLICommands_Debug();
 }
 

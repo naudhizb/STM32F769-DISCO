@@ -21,7 +21,7 @@ static DMA_HandleTypeDef *hdma = &USER_CONSOLE_UART_DMA_RX_HANDLE;
 extern osMessageQId console_Rx_queueHandle;
 static uint8_t rxbuf[256];
 
-void StartConsoleRxTask(void const * argument)
+void _StartConsoleRxTask(void const * argument)
 {
 	/* USER CODE BEGIN StartConsoleRxTask */
 	const int dma_size = 256;
@@ -45,13 +45,13 @@ void StartConsoleRxTask(void const * argument)
 				if(!((i+1)%16))
 					printf("\n");
 			}
-//			__HAL_DMA_DISABLE(hdma); // Call Interrupt
-//			for(int i =0; i < curr_len ; i++){
-//				osMessagePut(console_Rx_queueHandle, rxbuf[i], 1000);
-//			}
-//			do{
-//				status = HAL_UART_Receive_DMA(huart, rxbuf, dma_size);
-//			} while(status != HAL_OK);
+			__HAL_DMA_DISABLE(hdma); // Call Interrupt
+			for(int i =0; i < curr_len ; i++){
+				osMessagePut(console_Rx_queueHandle, rxbuf[i], 1000);
+			}
+			do{
+				status = HAL_UART_Receive_DMA(huart, rxbuf, dma_size);
+			} while(status != HAL_OK);
 		} else {
 			prev_len = curr_len;
 		}
